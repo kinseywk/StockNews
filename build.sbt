@@ -28,6 +28,7 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % 
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "4.0.3"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.30.0"
 libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.8"
+libraryDependencies += "org.apache.spark" %% "spark-mllib-local" % "2.4.8"
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the scala-parser-combinators dependency to the set of dependencies

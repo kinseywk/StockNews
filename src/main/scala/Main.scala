@@ -8,6 +8,7 @@ import org.joda.time.Days
 import com.github.nscala_time.time.Imports._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
+import org.apache.spark.ml._
 
 case class UserDatabase(users: List[UserRecord])
 case class UserRecord(username: String, password: String)
@@ -133,14 +134,14 @@ object Main extends App {
 
     println(s"Job complete!\n\nScraped ${resultsCount} of ${totalResults} headlines pertaining to company ${company}.\n\nPress Enter to continue.")
     readLine()
-    println("\u001b[2J")
+    print("\u001b[2J")
 
     result
   }
 
   //Scrape past month of headlines for a company and pull their daily stock performance stock quote
   def scrape(company: String, stockSymbol: String) {
-    println("\u001b[2J")
+    print("\u001b[2J")
 
     var history = scrapeHeadlines(company)
     /*
@@ -176,18 +177,17 @@ object Main extends App {
   }
 
   def loadCompanyRecord(company: String) {
-    /*
     val sc = new SparkContext()
     val companyObject = sc.wholeTextFiles(s"data/${company}.json")
     println(companyObject)
-    // val df = sc.read.json(companyObject)
-    // df.printSchema()
-    // df.show(false)
+    /*
+    val df = sc.read.json(companyObject)
+    df.printSchema()
+    df.show(false)
     */
   }
 
   def loadCompanyDatabase() {
-
   }
 
   val LOGIN_MENU = "Login Menu\n 1: Login\n 2: Signup\n 3: Quit"
@@ -284,12 +284,9 @@ object Main extends App {
           }
           //Load company data from disk into Hive/Spark
           case "2" => {
-            state = -1
-            /*
             print("Company: ")
             val company = readLine()
             loadCompanyRecord(company)
-            */
           }
           case "3" => {
             state = 3
