@@ -24,15 +24,15 @@ case class NewsApiArticle(
   urlToImage: Option[String],
   publishedAt: String,
   content: String
-  )
+)
+
+case class NewsApiSource(id: Option[String], name: String)
+
+case class CompanyRecord(name: String, stockSymbol: String, history: List[DayRecord])
+case class DayRecord(date: DateTime, stockOpen: Float, stockClose: Float, articles: List[ArticleRecord])
+case class ArticleRecord(datePublished: DateTime, headline: String, headlineSentiment: Float, summary: String, sample: String)
   
-  case class NewsApiSource(id: Option[String], name: String)
-  
-  case class CompanyRecord(name: String, stockSymbol: String, history: List[DayRecord])
-  case class DayRecord(date: DateTime, stockOpen: Float, stockClose: Float, headlines: List[ArticleRecord])
-  case class ArticleRecord(datePublished: DateTime, headline: String, headlineSentiment: Float, summary: String, sample: String)
-  
-  object Main extends App {
+object Main extends App {
   val VERSION = "1.0"
   val DATA_DIRECTORY = "data/"
   val USERS_JSON_URL = DATA_DIRECTORY + "users.json"
@@ -91,18 +91,21 @@ case class NewsApiArticle(
     result
   }
   
-  def scrapeHeadlines(company: String, history: List[DayRecord]) {
+  def scrapeHeadlines(company: String): List[DayRecord] = {
     //NewsAPI free plan allows you to pull headlines from up to a month ago, so loop through each day since then and pull headlines
+    var result = List[DayRecord]()
     var cursor = DateTime.now()
     val endDate = cursor - SCRAPE_TIMESPAN
+    var resultsCount = 0
+    var resultsPages = 0
+    var totalResults = 0
 
+    //Loop per day
     do {
-      var totalResults = 0
-      var resultsCount = 0
-      var resultsPages = 0
-      var todaysNewsApiArticles: List[NewsApiArticle] = List()
-      var todaysArticleRecords: List[ArticleRecord] = List()
-      
+      var dailyNewsApiArticles = List[NewsApiArticle]()
+      var dailyArticleRecords = List[ArticleRecord]()
+
+      //Loop per results page (up to limit)
       do {
         val year: Int = cursor.year().get()
         val month: Int = cursor.monthOfYear().get()
@@ -110,33 +113,63 @@ case class NewsApiArticle(
         val requestUrl = s"https://newsapi.org/v2/everything?q=${company}&from=${year}-${month}-${day}&to=${year}-${month}-${day}&sortBy=publishedAt&apiKey=${NEWSAPI_KEY}"
         val responseJson = scala.io.Source.fromURL(requestUrl).mkString("")
         var responseObject = read[NewsApiResponse](responseJson)
-        todaysArticles = todaysArticles ::: responseObject.articles
+        totalResults = responseObject.totalResults
+        dailyNewsApiArticles = dailyNewsApiArticles ::: responseObject.articles
+        dailyNewsApiArticles.foreach(x => dailyArticleRecords = dailyArticleRecords :+ ArticleRecord(cursor, x.title, 0.0f, x.description, x.content))
+        dailyArticleRecords.foreach(x => println(s" > ${x.headline}"))
         
-        //By default, NewsAPI returns results in pages of 100, so loop through pages until reading totalResults
-        totalResults += responseObject.totalResults
-        println(totalResults)
         resultsCount += responseObject.articles.length
         resultsPages += 1
         
-        println(s"Scraping news headlines for company ${company}: Received results page #${resultsPages} for ${month}/${day}/${year}, found articles ${resultsCount - responseObject.articles.length + 1} through ${resultsCount}...")
-        responseObject.articles.foreach(x => println(x.title))
-        println()
+        println(s"\nScraping news headlines for company ${company}: Received results page #${resultsPages} for ${month}/${day}/${year}, found articles ${resultsCount - responseObject.articles.length + 1} through ${resultsCount}...")
+        //Loop through pages until reading all results or reaching page limit
       } while(resultsCount < totalResults && resultsPages < NEWSAPI_MAX_PAGES)
 
-      todaysArticles.foreach()
-
-      history = history ::: DayRecord(date, 0.0f, 0.0f, todaysHeadlines)
-
+      result = result :+ DayRecord(cursor, 0.0f, 0.0f, dailyArticleRecords)
       cursor = cursor - 1.days
     } while(Math.abs(Days.daysBetween(cursor, endDate).getDays) > 0)
+
+    println(s"Job complete!\n\nScraped ${resultsCount} of ${totalResults} headlines pertaining to company ${company}.\n\nPress Enter to continue.")
+    readLine()
+
+    result
   }
 
-  def nlpHeadlines(history: List[DayRecord]) {
+  //Scrape past month of headlines for a company and pull their daily stock performance stock quote
+  def scrape(company: String, stockSymbol: String) {
+    println("\u001b[2J")
 
+    var history = scrapeHeadlines(company)
+    /*
+    history = nlpHeadlines(history)
+    history = scrapeStockQuotes(company, stockSymbol, history)
+    history = calculateCorrelation(history)
+    */
+
+    var companyRecord = CompanyRecord(company, stockSymbol, history)
+    
+    val writer = new PrintWriter(new File(s"${DATA_DIRECTORY}${company}.json"))
+    writer.write(write(companyRecord))
+    writer.close()
+
+    //TODO: Also insert into companies.json
+
+    println()
   }
 
-  def scrapeStockQuotes(company: String, stockSymbol: String, history: List[DayRecord]) {
+  def nlpHeadlines(history: List[DayRecord]): List[DayRecord] = {
+    var result = List[DayRecord]()
+    result
+  }
 
+  def scrapeStockQuotes(company: String, stockSymbol: String, history: List[DayRecord]): List[DayRecord] = {
+    var result = List[DayRecord]()
+    result
+  }
+
+  def calculateCorrelation(history: List[DayRecord]): List[DayRecord] = {
+    var result = List[DayRecord]()
+    result
   }
 
   def loadCompanyRecord(company: String) {
@@ -145,31 +178,6 @@ case class NewsApiArticle(
 
   def loadCompanyDatabase() {
 
-  }
-
-  def calculateCorrelation(history: List[DayRecord]) {
-
-  }
-
-  //Scrape past month of headlines for a company and pull their daily stock performance stock quote
-  def scrape(company: String, stockSymbol: String) {
-    println("\u001b[2J")
-
-    var history: List[DayRecord] = List()
-    var companyRecord: CompanyRecord(company, stockSymbol, history)
-
-    scrapeHeadlines(company, history)
-    nlpHeadlines(history)
-    scrapeStockQuotes(company, stockSymbol, history)
-    calculateCorrelation(history)
-
-    val writer = new PrintWriter(new File(s"${DATA_DIRECTORY}${company}.json"))
-    writer.write(write(companyRecord)))
-    writer.close()
-
-    //TODO: Also insert into companies.json
-
-    println()
   }
 
   val LOGIN_MENU = "Login Menu\n 1: Login\n 2: Signup\n 3: Quit"
