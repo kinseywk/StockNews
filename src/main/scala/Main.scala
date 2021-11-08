@@ -38,8 +38,9 @@ case class NewsApiArticle(
   val USERS_JSON_URL = DATA_DIRECTORY + "users.json"
   val COMPANIES_JSON_URL = DATA_DIRECTORY + "companies.json"
   val ADMIN_USERNAME = "kyle"
+  val SCRAPE_TIMESPAN = 3.days
   val NEWSAPI_KEY = "c9cfa14c38a242f8aa7290569e680b27"
-  val NEWSAPI_MAX_PAGES = 2
+  val NEWSAPI_MAX_PAGES = 3
     
   implicit val formats = Serialization.formats(NoTypeHints)
 
@@ -93,8 +94,9 @@ case class NewsApiArticle(
   def scrapeHeadlines(company: String) {
     //NewsAPI free plan allows you to pull headlines from up to a month ago, so loop through each day since then and pull headlines
     var cursor = DateTime.now()
-    //val endDate = cursor - 1.months
-    val endDate = cursor - 2.days
+    val endDate = cursor - SCRAPE_TIMESPAN
+
+    var articles: List[NewsApiArticle] = List()
 
     do {
       var totalResults = 0
@@ -108,8 +110,7 @@ case class NewsApiArticle(
         val requestUrl = s"https://newsapi.org/v2/everything?q=${company}&from=${year}-${month}-${day}&to=${year}-${month}-${day}&sortBy=publishedAt&apiKey=${NEWSAPI_KEY}"
         val responseJson = scala.io.Source.fromURL(requestUrl).mkString("")
         var responseObject = read[NewsApiResponse](responseJson)
-        // var articles: List[ArticleRecord] = responseObject.articles
-        // val record = DayRecord(date, 0.0f, 0.0f, headlines)
+        articles = articles ::: responseObject.articles
         
         //By default, NewsAPI returns results in pages of 100, so loop through pages until reading totalResults
         totalResults += responseObject.totalResults
@@ -122,6 +123,8 @@ case class NewsApiArticle(
 
       cursor = cursor - 1.days
     } while(Math.abs(Days.daysBetween(cursor, endDate).getDays) > 0)
+
+    articles.foreach(x => println(x.title))
   }
 
   def nlpHeadlines() {
@@ -137,7 +140,7 @@ case class NewsApiArticle(
   }
 
   def loadCompanyDatabase() {
-    
+
   }
 
   def calculateCorrelation() {
@@ -177,10 +180,10 @@ case class NewsApiArticle(
   var state = 0
   var menu = LOGIN_MENU
 
-  print(s"stock-news Headline Sentiment-to-Stock Performance Correlation Calculator v${VERSION}\n\n")
+  println(s"\u001b[2Jstock-news Headline Sentiment-to-Stock Performance Correlation Calculator v${VERSION}\n\n")
 
   do {
-    print(s"${menu + "\nOption: "}")
+    print(s"${menu + "\n\nOption: "}")
 
     state match {
       //Login Menu
