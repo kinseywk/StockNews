@@ -25,10 +25,9 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2"
-//libraryDependencies += "org.json4s" %% "json4s-native" % "4.0.3"
 libraryDependencies += "org.json4s" %% "json4s-jackson" % "4.0.3"
 libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.30.0"
-//libraryDependencies += "org.apache.spark" %% "spark-core" % "1.4.0"
+libraryDependencies += "org.apache.spark" %% "spark-core" % "2.4.8"
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the scala-parser-combinators dependency to the set of dependencies

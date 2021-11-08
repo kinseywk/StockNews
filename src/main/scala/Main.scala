@@ -6,6 +6,8 @@ import org.json4s.jackson.Serialization.{read, write}
 import org.json4s.NoTypeHints
 import org.joda.time.Days
 import com.github.nscala_time.time.Imports._
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
 
 case class UserDatabase(users: List[UserRecord])
 case class UserRecord(username: String, password: String)
@@ -131,6 +133,7 @@ object Main extends App {
 
     println(s"Job complete!\n\nScraped ${resultsCount} of ${totalResults} headlines pertaining to company ${company}.\n\nPress Enter to continue.")
     readLine()
+    println("\u001b[2J")
 
     result
   }
@@ -173,7 +176,14 @@ object Main extends App {
   }
 
   def loadCompanyRecord(company: String) {
-
+    /*
+    val sc = new SparkContext()
+    val companyObject = sc.wholeTextFiles(s"data/${company}.json")
+    println(companyObject)
+    // val df = sc.read.json(companyObject)
+    // df.printSchema()
+    // df.show(false)
+    */
   }
 
   def loadCompanyDatabase() {
@@ -275,7 +285,11 @@ object Main extends App {
           //Load company data from disk into Hive/Spark
           case "2" => {
             state = -1
-
+            /*
+            print("Company: ")
+            val company = readLine()
+            loadCompanyRecord(company)
+            */
           }
           case "3" => {
             state = 3
