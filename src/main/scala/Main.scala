@@ -8,7 +8,7 @@ import org.joda.time.Days
 import com.github.nscala_time.time.Imports._
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
-import org.apache.spark.ml._
+import org.apache.spark.ml.stat.Correlation
 
 case class UserDatabase(users: List[UserRecord])
 case class UserRecord(username: String, password: String)
